@@ -1,207 +1,215 @@
 # XAI Robustness Under Data Drift
 
-## Overview
-This project presents a systematic evaluation of how post-hoc explainability methods behave under data drift. It focuses on the stability of SHAP and LIME explanations when the training data distribution is perturbed, while model performance remains largely unchanged.
+Evaluating the stability of post-hoc explainability methods — SHAP and LIME — when training data distribution is perturbed while model performance remains nearly constant.
 
-The study demonstrates that explanation reliability can degrade significantly even when predictive accuracy is stable, highlighting a critical risk in deploying explainable machine learning systems.
+---
+
+## Table of Contents
+
+- [Problem Statement](#problem-statement)
+- [Dataset](#dataset)
+- [Model](#model)
+- [Explainability Methods](#explainability-methods)
+- [Drift Simulation](#drift-simulation)
+- [Evaluation Metrics](#evaluation-metrics)
+- [Results](#results)
+- [Extended Analysis](#extended-analysis)
+- [Key Insights](#key-insights)
+- [Project Structure](#project-structure)
+- [How to Run](#how-to-run)
 
 ---
 
 ## Problem Statement
-Most machine learning systems rely on accuracy as the primary evaluation metric. However, in high-stakes domains, explanation reliability is equally important.
 
-This project investigates:
-- Whether SHAP and LIME maintain consistent feature importance rankings under drift
-- How different types of data drift affect explanation stability
-- Whether model accuracy is a reliable proxy for explanation quality
+This project investigates whether post-hoc explanation methods can be trusted when the data an ML model was trained on shifts over time. Specifically, it examines:
+
+- Stability of SHAP and LIME feature importance rankings under distributional drift
+- Impact of different drift types on explanation reliability
+- Whether model accuracy is a valid proxy for explanation quality
 
 ---
 
 ## Dataset
-- Dataset: GiveMe Credit
-- Number of samples: 150,000
-- Task: Binary classification (credit default prediction)
-- Final feature count: 19 (including engineered features)
 
-Preprocessing:
-- Missing values imputed (median and mode)
-- Feature engineering applied (9 additional features)
-- Z-score normalization
+**GiveMe Credit** — binary classification task (predicting credit default)
+
+| Property | Value |
+|---|---|
+| Total samples | 150,000 |
+| Final features | 19 |
+| Task | Binary classification |
+
+**Preprocessing:**
+- Missing value imputation using median (continuous) and mode (categorical)
+- Feature engineering adding 9 derived features
+- Z-score normalization across all features
 
 ---
 
 ## Model
-- Algorithm: XGBoost Classifier
-- Training strategy: Early stopping
-- Decision threshold: 0.47
-- Baseline test accuracy: 93.78%
 
-Observed accuracy range across experiments:
-- Minimum: 93.32%
-- Maximum: 93.81%
+**Algorithm:** XGBoost Classifier
+
+| Setting | Value |
+|---|---|
+| Training strategy | Early stopping |
+| Decision threshold | 0.47 |
+| Baseline accuracy | 93.78% |
+| Accuracy range (all experiments) | 93.32% - 93.81% |
 
 ---
 
 ## Explainability Methods
-- SHAP (KernelExplainer with KMeans background of 50 clusters)
-- LIME (LimeTabularExplainer)
+
+**SHAP** — KernelExplainer with KMeans background sampling (50 clusters)
+
+**LIME** — LimeTabularExplainer with default settings
+
+Both methods are applied post-hoc to the trained XGBoost model to generate local feature importance explanations.
 
 ---
 
 ## Drift Simulation
 
-Drift was applied only to training data to isolate model-level effects.
+Drift is applied exclusively to the training data. The test set remains unchanged throughout all experiments.
 
-### Drift Types and Levels
+### Drift Types
 
-1. Gaussian Noise
-   - σ = 0.1, 0.2, 0.3
+| Type | Configurations |
+|---|---|
+| Gaussian Noise | sigma = 0.1, 0.2, 0.3 |
+| MCAR Missingness | 5%, 10%, 20% |
+| Covariate Shift | Small, Medium, Severe |
 
-2. MCAR Missingness
-   - 5%, 10%, 20% missing values
-
-3. Covariate Shift
-   - Small, Medium, Severe transformations
-
-Total configurations evaluated: 9
+**Total configurations:** 9
 
 ---
 
 ## Evaluation Metrics
 
-Explanation stability measured using rank correlation:
+Explanation stability is measured by comparing feature importance rankings between baseline and drifted conditions.
 
-- Spearman Rank Correlation (ρ)
-- Kendall Tau (τ)
+| Metric | Description |
+|---|---|
+| Spearman Rank Correlation (rho) | Measures rank-order agreement |
+| Kendall Tau | Measures pairwise rank concordance |
 
-Reliability threshold:
-- ρ ≥ 0.7 considered stable
-
----
-
-## Key Results
-
-### 1. SHAP Stability Degradation
-
-- Noise (σ = 0.1): ρ = 0.356
-- Noise (σ = 0.3): ρ = 0.207
-- Covariate shift (small): ρ = 0.133
-
-Maximum stability loss observed:
-- SHAP: 86.7%
+**Stability threshold:** rho >= 0.7
 
 ---
 
-### 2. LIME Stability
+## Results
 
-- Noise (σ = 0.1): ρ = 0.563
-- Noise (σ = 0.3): ρ = 0.304
-- Covariate shift (small): ρ = 0.502
+### SHAP Stability
 
-Average stability loss:
-- LIME: 38.3%
-- SHAP: 49.6%
+| Drift Condition | Spearman rho |
+|---|---|
+| Gaussian Noise (sigma = 0.1) | 0.356 |
+| Gaussian Noise (sigma = 0.3) | 0.207 |
+| Covariate Shift (small) | 0.133 |
+| MCAR Missingness | ~0.91 |
 
----
+Maximum SHAP stability loss: **86.7%**
+Average SHAP stability loss across all conditions: **49.6%**
 
-### 3. Missing Data Impact
+### LIME Stability
 
-MCAR missingness had minimal effect:
+| Drift Condition | Spearman rho |
+|---|---|
+| Gaussian Noise (sigma = 0.1) | 0.563 |
+| Gaussian Noise (sigma = 0.3) | 0.304 |
+| Covariate Shift (small) | 0.502 |
+| MCAR Missingness | ~0.80 |
 
-- SHAP: ρ ≈ 0.91
-- LIME: ρ ≈ 0.80
+Average LIME stability loss across all conditions: **38.3%**
 
----
+### Accuracy vs. Explanation Stability
 
-### 4. Accuracy vs Explanation Reliability
+| Measure | Range |
+|---|---|
+| Model accuracy | 93.3% - 93.8% |
+| SHAP stability minimum | 0.133 |
 
-- Accuracy remained within 93.3% – 93.8%
-- SHAP stability dropped as low as 0.133
-
-Conclusion:
-Accuracy is not a reliable indicator of explanation quality.
+Model accuracy remains virtually constant while explanation stability collapses — confirming that accuracy is not a reliable indicator of explanation quality.
 
 ---
 
 ## Extended Analysis
 
 ### KS-Test Drift Detection
-- Covariate shift KS: up to 0.979
-- Noise KS: ~0.26 – 0.28
-- Missingness KS: ~0.04 – 0.18
 
-Higher KS distance strongly correlates with explanation instability.
+| Drift Type | KS Statistic |
+|---|---|
+| Covariate shift | Up to 0.979 |
+| Gaussian noise | ~0.26 - 0.28 |
+| MCAR missingness | ~0.04 - 0.18 |
 
----
+### SHAP-LIME Agreement (Jaccard Similarity)
 
-### SHAP–LIME Agreement
-- Baseline Jaccard similarity: 1.0
-- Under drift: as low as 0.667
+| Condition | Jaccard |
+|---|---|
+| Baseline | 1.0 |
+| Under drift | ~0.667 |
 
----
+### Multi-Seed Stability (5 seeds, Gaussian Noise sigma = 0.2)
 
-### Multi-Seed Stability (5 seeds)
-- SHAP (noise 0.2): ρ range 0.156 – 0.298
-- LIME (noise 0.2): ρ range 0.575 – 0.681
+| Method | rho Range |
+|---|---|
+| SHAP | 0.156 - 0.298 |
+| LIME | 0.575 - 0.681 |
 
----
+### Faithfulness (Deletion AUC)
 
-### Faithfulness (Feature Deletion AUC)
-- Baseline AUC: 0.8866
-- Worst drift AUC: 0.8865
+| Condition | Deletion AUC |
+|---|---|
+| Baseline | 0.8866 |
+| Worst drift | 0.8865 |
 
-Observation:
-Faithfulness remains stable even when ranking stability degrades.
+Faithfulness is effectively invariant to drift conditions, indicating that stability and faithfulness measure independent properties of explanations.
 
 ---
 
 ## Key Insights
 
-- Covariate shift is the most damaging drift type for explainability
-- SHAP is more sensitive to distribution shifts than LIME
-- Missing data has limited impact due to imputation
-- Explanation stability and faithfulness are independent properties
-- Accuracy alone cannot be used to validate explainability
+1. **Covariate shift causes maximum instability** — among all drift types, covariate shift produces the most severe degradation in explanation quality.
+2. **SHAP is more sensitive than LIME** — SHAP explanations degrade faster and more severely under all drift conditions tested.
+3. **Missing data has minimal effect** — due to imputation during preprocessing, MCAR missingness has a comparatively small impact on explanation stability.
+4. **Stability and faithfulness are independent** — a faithful explanation is not necessarily a stable one; the two properties capture different aspects of explanation quality.
+5. **Accuracy is not a proxy for explanation reliability** — model accuracy held above 93% across all experiments while SHAP stability fell as low as 0.133, demonstrating a critical blind spot in accuracy-only evaluation.
 
 ---
 
 ## Project Structure
-├── XAI_Team58_Counterfactual Chaos.ipynb
-├── XAI_Robustness_Report_Team58.pdf
-├── README.md
+
+```
+.
+├── XAI_Team58_Counterfactual Chaos.ipynb   # Main experiment notebook
+├── XAI_Robustness_Report_Team58.pdf        # Full written report
+└── README.md
+```
 
 ---
 
 ## How to Run
 
-1. Clone the repository
+**1. Clone the repository**
 
+```bash
 git clone https://github.com/your-username/xai-robustness-under-data-drift.git
-
 cd xai-robustness-under-data-drift
+```
 
+**2. Install dependencies**
 
-2. Install dependencies
-
+```bash
 pip install -r requirements.txt
+```
 
+**3. Launch the notebook**
 
-3. Run the notebook
-
+```bash
 jupyter notebook
+```
 
-
----
-
-## Recommendations
-
-- Deploy drift detection (e.g., KS-test) in production pipelines
-- Prefer LIME in environments with frequent distribution shift
-- Validate explanation stability before relying on model interpretations
-- Perform multi-seed evaluation for robust conclusions
-
----
-
-## Author
-
-Independent project. Designed, implemented, and analyzed end-to-end.
+Open `XAI_Team58_Counterfactual Chaos.ipynb` and run all cells in order.
