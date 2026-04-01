@@ -166,3 +166,42 @@ Faithfulness remains stable even when ranking stability degrades.
 ---
 
 ## Project Structure
+├── XAI_Team58_Counterfactual Chaos.ipynb
+├── XAI_Robustness_Report_Team58.pdf
+├── README.md
+
+---
+
+## How to Run
+
+1. Clone the repository
+
+git clone https://github.com/your-username/xai-robustness-under-data-drift.git
+
+cd xai-robustness-under-data-drift
+
+
+2. Install dependencies
+
+pip install -r requirements.txt
+
+
+3. Run the notebook
+
+jupyter notebook
+
+
+---
+
+## Recommendations
+
+- Deploy drift detection (e.g., KS-test) in production pipelines
+- Prefer LIME in environments with frequent distribution shift
+- Validate explanation stability before relying on model interpretations
+- Perform multi-seed evaluation for robust conclusions
+
+---
+
+## Author
+
+Independent project. Designed, implemented, and analyzed end-to-end.
