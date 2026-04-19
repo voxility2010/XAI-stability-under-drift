@@ -2,7 +2,7 @@
 
 **Evaluating Explanation Stability of SHAP and LIME Across Multiple Datasets and Model Families**
 
-> Team 58 — Counterfactual Chaos
+> Vardha Kathuria
 
 ---
 
